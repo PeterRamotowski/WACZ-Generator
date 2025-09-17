@@ -1,0 +1,13 @@
+controllers:
+    resource:
+        path: ../src/Controller/
+        namespace: App\Controller
+    type: attribute
+
+# Przekierowanie głównej strony na dashboard WACZ
+home:
+    path: /
+    controller: App\Controller\WaczGeneratorController::index
+    defaults:
+        route: 'app_wacz_index'
+        permanent: true

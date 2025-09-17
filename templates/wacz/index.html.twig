@@ -1,0 +1,200 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'nav.dashboard'|trans }} - {{ 'app.name'|trans }}{% endblock %}
+
+{% block header %}
+<header class="bg-white shadow">
+    <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold tracking-tight text-gray-900">{{ 'nav.dashboard'|trans }}</h1>
+    </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Statistics -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="h-8 w-8 bg-indigo-500 rounded-md flex items-center justify-center">
+                            <span class="text-white text-sm font-medium">{{ statistics.total }}</span>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.total_requests'|trans }}</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ statistics.total }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="h-8 w-8 bg-green-500 rounded-md flex items-center justify-center">
+                            <span class="text-white text-sm font-medium">{{ statistics.completed }}</span>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.completed'|trans }}</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ statistics.completed }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="h-8 w-8 bg-yellow-500 rounded-md flex items-center justify-center">
+                            <span class="text-white text-sm font-medium">{{ statistics.pending + statistics.processing }}</span>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.in_progress'|trans }}</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ statistics.pending + statistics.processing }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="h-8 w-8 bg-red-500 rounded-md flex items-center justify-center">
+                            <span class="text-white text-sm font-medium">{{ statistics.failed }}</span>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">{{ 'statistics.failed'|trans }}</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ statistics.failed }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">{{ 'actions.quick_actions'|trans }}</h3>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <a href="{{ path('wacz_create') }}" 
+                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                    {{ 'actions.create_new_archive'|trans }}
+                </a>
+                <a href="{{ path('wacz_list') }}" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    {{ 'actions.view_all_archives'|trans }}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Requests -->
+    {% if recent_requests %}
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">{{ 'pages.recent_requests'|trans }}</h3>
+            <div class="overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {{ 'fields.title'|trans }}
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {{ 'fields.url'|trans }}
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {{ 'fields.status'|trans }}
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {{ 'fields.created'|trans }}
+                            </th>
+                            <th class="relative px-6 py-3">
+                                <span class="sr-only">{{ 'fields.actions'|trans }}</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for request in recent_requests %}
+                        <tr>
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                                <a href="{{ path('wacz_show', {id: request.id}) }}" class="hover:text-indigo-600">
+                                    {{ request.title }}
+                                </a>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                <a href="{{ request.url }}" target="_blank" class="hover:text-indigo-600" title="{{ request.url }}">
+                                    {{ request.url|length > 50 ? request.url|slice(0, 50) ~ '...' : request.url }}
+                                </a>
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if request.status == 'completed' %}
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                        {{ 'statistics.completed'|trans }}
+                                    </span>
+                                {% elseif request.status == 'processing' %}
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                        {{ 'statistics.processing'|trans }}
+                                    </span>
+                                {% elseif request.status == 'pending' %}
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                        {{ 'statistics.pending'|trans }}
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                        {{ 'fields.error'|trans }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                {{ request.createdAt|date('Y-m-d H:i') }}
+                            </td>
+                            <td class="px-6 py-4 text-right text-sm font-medium">
+                                <a href="{{ path('wacz_show', {id: request.id}) }}" 
+                                   class="text-indigo-600 hover:text-indigo-900">
+                                    {{ 'actions.view'|trans }}
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6 text-center">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2">{{ 'pages.no_requests'|trans }}</h3>
+            <p class="text-gray-500 mb-4">{{ 'pages.no_requests_description'|trans }}</p>
+            <a href="{{ path('wacz_create') }}" 
+               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                {{ 'actions.create_first_archive'|trans }}
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

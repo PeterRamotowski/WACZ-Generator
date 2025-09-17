@@ -1,0 +1,345 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ wacz_request.title }} - {{ 'app.name'|trans }}{% endblock %}
+
+{% block header %}
+<header class="bg-white shadow">
+    <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight text-gray-900">{{ wacz_request.title }}</h1>
+                <p class="mt-1 text-sm text-gray-500">{{ 'fields.id'|trans }} {{ wacz_request.id }}</p>
+            </div>
+            <div class="flex space-x-3">
+                <a href="{{ path('wacz_list') }}" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    {{ 'fields.back_to_archive_list'|trans }}
+                </a>
+                {% if wacz_request.isCompleted() and wacz_request.filePath %}
+                <a href="{{ path('wacz_download', {id: wacz_request.id}) }}" 
+                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
+                    <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                    </svg>
+                    {{ 'actions.download_archive'|trans }}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6" 
+     data-status-url="{{ path('wacz_progress', { id: wacz_request.id }) }}"
+     data-process-url="{{ path('wacz_process', { id: wacz_request.id }) }}"
+     data-current-status="{{ wacz_request.status }}"
+     data-max-pages="{{ wacz_request.maxPages }}"
+     data-crawled-pages-count="{{ crawled_pages|length }}">
+    <!-- Status and Progress -->
+    <div class="bg-white shadow rounded-lg">
+        <div id="status-container" class="px-4 py-5 sm:p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">{{ 'pages.processing_status'|trans }}</h3>
+                {% if wacz_request.status == 'completed' %}
+                    <span class="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">
+                        {{ 'statistics.completed'|trans }}
+                    </span>
+                {% elseif wacz_request.status == 'processing' %}
+                    <span class="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {{ 'statistics.in_progress'|trans }}
+                    </span>
+                {% elseif wacz_request.status == 'pending' %}
+                    <span class="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                        {{ 'filters.pending'|trans }}
+                    </span>
+                {% else %}
+                    <span class="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-red-100 text-red-800">
+                        {{ 'fields.error'|trans }}
+                    </span>
+                {% endif %}
+            </div>
+
+            <!-- Progress Bar -->
+            <div id="progress-section" class="mb-4" {% if wacz_request.status == 'processing' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                    <span id="progress-text">{{ 'fields.progress'|trans }} <span>{{ progress.total_pages }}/{{ wacz_request.maxPages }}</span> {{ 'fields.pages'|trans }}</span>
+                    <span id="progress-percentage">{{ progress.progress_percentage|round(1) }}%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                         style="width: {{ progress.progress_percentage }}%"></div>
+                </div>
+                {% if progress.estimated_completion %}
+                <p id="estimated-completion" class="text-xs text-gray-500 mt-1">
+                        {{ 'fields.estimated_completion'|trans }} {{ progress.estimated_completion }}
+                </p>
+                {% endif %}
+            </div>
+
+            <!-- Statistics -->
+            <div id="statistics-section" class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <div class="text-center">
+                    <dt class="text-sm font-medium text-gray-500">{{ 'fields.pages_downloaded'|trans }}</dt>
+                    <dd id="total-pages" class="text-2xl font-semibold text-gray-900">{{ progress.total_pages }}</dd>
+                </div>
+                <div class="text-center">
+                    <dt class="text-sm font-medium text-gray-500">{{ 'fields.successful'|trans }}</dt>
+                    <dd id="successful-pages" class="text-2xl font-semibold text-green-600">{{ progress.successful_pages }}</dd>
+                </div>
+                <div class="text-center">
+                    <dt class="text-sm font-medium text-gray-500">{{ 'fields.errors'|trans }}</dt>
+                    <dd id="error-pages" class="text-2xl font-semibold text-red-600">{{ progress.error_pages }}</dd>
+                </div>
+                <div class="text-center">
+                    <dt class="text-sm font-medium text-gray-500">{{ 'fields.skipped'|trans }}</dt>
+                    <dd id="skipped-pages" class="text-2xl font-semibold text-yellow-600">{{ progress.skipped_pages }}</dd>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            {% if wacz_request.status == 'pending' %}
+            <div class="mt-6 flex justify-center">
+                <button type="button" 
+                        id="start-processing-btn"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1M9 16h1m4 0h1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span id="processing-text">{{ 'actions.start_processing'|trans }}</span>
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Basic Information -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">{{ 'pages.basic_information'|trans }}</h3>
+            <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">{{ 'fields.target_url'|trans }}</dt>
+                    <dd class="mt-1 text-sm text-gray-900">
+                        <a href="{{ wacz_request.url }}" target="_blank" class="text-indigo-600 hover:text-indigo-500">
+                            {{ wacz_request.url }}
+                        </a>
+                    </dd>
+                </div>
+                {% if wacz_request.description %}
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">{{ 'fields.description'|trans }}</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ wacz_request.description }}</dd>
+                </div>
+                {% endif %}
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">{{ 'fields.creation_date'|trans }}</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ wacz_request.createdAt|date('Y-m-d H:i:s') }}</dd>
+                </div>
+                {% if wacz_request.startedAt %}
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">{{ 'fields.start_date'|trans }}</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ wacz_request.startedAt|date('Y-m-d H:i:s') }}</dd>
+                </div>
+                {% endif %}
+                {% if wacz_request.completedAt %}
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">{{ 'fields.completion_date'|trans }}</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ wacz_request.completedAt|date('Y-m-d H:i:s') }}</dd>
+                </div>
+                {% endif %}
+                {% if wacz_request.duration %}
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">{{ 'fields.processing_time'|trans }}</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ wacz_request.duration }}s</dd>
+                </div>
+                {% endif %}
+            </dl>
+        </div>
+    </div>
+
+    <!-- Configuration -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">{{ 'pages.crawling_configuration'|trans }}</h3>
+            <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-3">
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">{{ 'fields.maximum_depth'|trans }}</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ wacz_request.maxDepth }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">{{ 'fields.maximum_pages'|trans }}</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ wacz_request.maxPages }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">{{ 'fields.delay_ms'|trans }}</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ wacz_request.crawlDelay }}</dd>
+                </div>
+            </dl>
+
+            {% if wacz_request.metadata.options %}
+            <div class="mt-6">
+                <h4 class="text-sm font-medium text-gray-500 mb-2">{{ 'fields.additional_options'|trans }}</h4>
+                <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                    <div class="flex items-center">
+                        <span class="text-sm text-gray-600">{{ 'fields.external_links'|trans }}</span>
+                        <span class="ml-2 text-sm {% if wacz_request.metadata.options.followExternalLinks %}text-green-600{% else %}text-red-600{% endif %}">
+                            {% if wacz_request.metadata.options.followExternalLinks %}{{ 'fields.yes'|trans }}{% else %}{{ 'fields.no'|trans }}{% endif %}
+                        </span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-sm text-gray-600">{{ 'fields.images'|trans }}</span>
+                        <span class="ml-2 text-sm {% if wacz_request.metadata.options.includeImages %}text-green-600{% else %}text-red-600{% endif %}">
+                            {% if wacz_request.metadata.options.includeImages %}{{ 'fields.yes'|trans }}{% else %}{{ 'fields.no'|trans }}{% endif %}
+                        </span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-sm text-gray-600">{{ 'fields.css'|trans }}</span>
+                        <span class="ml-2 text-sm {% if wacz_request.metadata.options.includeCSS %}text-green-600{% else %}text-red-600{% endif %}">
+                            {% if wacz_request.metadata.options.includeCSS %}{{ 'fields.yes'|trans }}{% else %}{{ 'fields.no'|trans }}{% endif %}
+                        </span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-sm text-gray-600">{{ 'fields.javascript'|trans }}</span>
+                        <span class="ml-2 text-sm {% if wacz_request.metadata.options.includeJS %}text-green-600{% else %}text-red-600{% endif %}">
+                            {% if wacz_request.metadata.options.includeJS %}{{ 'fields.yes'|trans }}{% else %}{{ 'fields.no'|trans }}{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- File Information -->
+    {% if wacz_request.isCompleted() %}
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">{{ 'pages.file_information'|trans }}</h3>
+            <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">{{ 'fields.file_path'|trans }}</dt>
+                    <dd class="mt-1 text-sm text-gray-900 font-mono">{{ wacz_request.filePath|default('fields.none'|trans) }}</dd>
+                </div>
+                {% if wacz_request.fileSize %}
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">{{ 'fields.file_size'|trans }}</dt>
+                    <dd class="mt-1 text-sm text-gray-900">
+                        {{ (wacz_request.fileSize / 1024 / 1024)|round(2) }} {{ 'fields.mb'|trans }} 
+                        <span class="text-gray-500">({{ wacz_request.fileSize|number_format }} {{ 'fields.bytes'|trans }})</span>
+                    </dd>
+                </div>
+                {% endif %}
+            </dl>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Error Information -->
+    {% if wacz_request.isFailed() and wacz_request.errorMessage %}
+    <div class="bg-red-50 border border-red-200 rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-red-800 mb-4">{{ 'pages.error_information'|trans }}</h3>
+            <div class="bg-red-100 border border-red-200 rounded-md p-4">
+                <pre class="text-sm text-red-800 whitespace-pre-wrap">{{ wacz_request.errorMessage }}</pre>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Crawled Pages List -->
+    {% if crawled_pages is defined and crawled_pages|length > 0 %}
+    <div class="mt-6">
+        <h4 class="text-md font-medium text-gray-900 mb-4">{{ 'pages.processed_pages_list'|trans }}</h4>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'fields.url'|trans }}</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'fields.status'|trans }}</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'fields.http_code'|trans }}</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'fields.size'|trans }}</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'fields.response_time'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for page in crawled_pages %}
+                    <tr>
+                        <td class="px-6 py-4 text-sm text-gray-900">
+                            <a href="{{ page.url }}" target="_blank" class="text-indigo-600 hover:text-indigo-900 truncate max-w-xs block" title="{{ page.url }}">
+                                {{ page.url|length > 50 ? page.url|slice(0, 50) ~ '...' : page.url }}
+                            </a>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if page.status == 'success' %}
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{{ 'fields.successful'|trans }}</span>
+                            {% elseif page.status == 'error' %}
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">{{ 'fields.error'|trans }}</span>
+                            {% elseif page.status == 'skipped' %}
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">{{ 'fields.skipped'|trans }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500">{{ page.httpStatusCode }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            {% if page.contentLength %}
+                                {{ (page.contentLength / 1024)|round(1) }} {{ 'fields.kb'|trans }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            {% if page.responseTime %}
+                                {{ page.responseTime }} {{ 'fields.ms'|trans }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Danger Zone -->
+    <div class="bg-white shadow rounded-lg border border-red-200">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-red-800 mb-4">{{ 'pages.danger_zone'|trans }}</h3>
+            <p class="text-sm text-gray-600 mb-4">
+                {{ 'pages.danger_zone_description'|trans }}
+            </p>
+            <form method="post" action="{{ path('wacz_delete', {id: wacz_request.id}) }}" class="inline">
+                <button type="submit" 
+                        class="inline-flex items-center px-4 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100"
+                        onclick="return confirm('{{ 'pages.delete_archive_confirmation'|trans }}')">
+                    <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    {{ 'pages.delete_archive'|trans }}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+window.waczTranslations = {
+    completed: '{{ 'statistics.completed'|trans|escape('js') }}',
+    processing: '{{ 'statistics.in_progress'|trans|escape('js') }}',
+    pending: '{{ 'filters.pending'|trans|escape('js') }}',
+    error: '{{ 'fields.error'|trans|escape('js') }}',
+    estimated_completion: '{{ 'fields.estimated_completion'|trans|escape('js') }}',
+    processing_in_progress: '{{ 'messages.processing_in_progress'|trans|escape('js') }}',
+    please_wait: '{{ 'messages.please_wait'|trans|escape('js') }}',
+    processing_started_successfully: '{{ 'messages.processing_started_successfully'|trans|escape('js') }}',
+    processing_error: '{{ 'messages.processing_error'|trans|escape('js') }}',
+    error_during_processing: '{{ 'messages.error_during_processing'|trans|escape('js') }}',
+    processing_failed: '{{ 'messages.processing_failed'|trans|escape('js') }}',
+    error_starting_processing: '{{ 'messages.error_starting_processing_js'|trans|escape('js') }}'
+};
+</script>
+{% endblock %}

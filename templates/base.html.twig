@@ -1,0 +1,97 @@
+{% import 'macros/vite.html.twig' as vite %}
+<!DOCTYPE html>
+<html lang="{{ app.request.locale }}" class="h-full bg-gray-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ 'app.name'|trans }}{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+
+    {{ vite_entry_link_tags('app') }}
+    {% block stylesheets %}{% endblock %}
+</head>
+<body class="h-full">
+    <div class="min-h-full">
+        <nav class="bg-indigo-600">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <h1 class="text-white text-xl font-bold">
+                                <a href="{{ path('wacz_index') }}" class="hover:text-indigo-200">
+                                    🗃️ {{ 'app.name'|trans }}
+                                </a>
+                            </h1>
+                        </div>
+                        <div class="hidden md:block">
+                            <div class="ml-10 flex items-baseline space-x-4">
+                                <a href="{{ path('wacz_index') }}" 
+                                   class="{% if app.request.get('_route') == 'wacz_index' %}bg-indigo-700 text-white{% else %}text-indigo-200 hover:bg-indigo-500 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">
+                                    {{ 'nav.dashboard'|trans }}
+                                </a>
+                                <a href="{{ path('wacz_create') }}" 
+                                   class="{% if app.request.get('_route') == 'wacz_create' %}bg-indigo-700 text-white{% else %}text-indigo-200 hover:bg-indigo-500 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">
+                                    {{ 'nav.new_archive'|trans }}
+                                </a>
+                                <a href="{{ path('wacz_list') }}" 
+                                   class="{% if app.request.get('_route') == 'wacz_list' %}bg-indigo-700 text-white{% else %}text-indigo-200 hover:bg-indigo-500 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">
+                                    {{ 'nav.archive_list'|trans }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hidden md:block">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-indigo-200 text-sm">{{ 'nav.language'|trans }}:</span>
+                            {% set current_locale = app.request.locale %}
+                            <a href="{{ path('wacz_change_locale', {'_locale': 'en'}) }}" 
+                               class="{% if current_locale == 'en' %}bg-indigo-700 text-white{% else %}text-indigo-200 hover:bg-indigo-500 hover:text-white{% endif %} rounded-md px-2 py-1 text-xs font-medium">
+                                EN
+                            </a>
+                            <a href="{{ path('wacz_change_locale', {'_locale': 'pl'}) }}" 
+                               class="{% if current_locale == 'pl' %}bg-indigo-700 text-white{% else %}text-indigo-200 hover:bg-indigo-500 hover:text-white{% endif %} rounded-md px-2 py-1 text-xs font-medium">
+                                PL
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        {% block header %}{% endblock %}
+
+        <main>
+            <div class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
+                <!-- Flash messages -->
+                <div class="flash-messages">
+                    {% for type, messages in app.flashes %}
+                        {% for message in messages %}
+                            <div class="flash-message {% if type == 'error' %}flash-error{% elseif type == 'success' %}flash-success{% elseif type == 'warning' %}flash-warning{% else %}flash-info{% endif %} p-4">
+                                <p>
+                                    {{ message }}
+                                </p>
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+
+                <!-- Page content -->
+                <div class="px-4 py-6 sm:px-0">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer class="bg-white border-t">
+        <div class="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+            <p class="text-center text-sm text-gray-500">
+                {{ 'app.name'|trans }} © {{ "now"|date("Y") }}
+            </p>
+        </div>
+    </footer>
+
+    {{ vite_entry_script_tags('app') }}
+    {% block javascripts %}{% endblock %}
+</body>
+</html>

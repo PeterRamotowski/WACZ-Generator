@@ -1,0 +1,13 @@
+{% macro vite_css(entry) %}
+    {% set assets = get_vite_assets(entry) %}
+    {% for css_file in assets.css %}
+        <link rel="stylesheet" href="{{ asset('build/' ~ css_file) }}">
+    {% endfor %}
+{% endmacro %}
+
+{% macro vite_js(entry) %}
+    {% set assets = get_vite_assets(entry) %}
+    {% if assets.js %}
+        <script src="{{ asset('build/' ~ assets.js) }}"></script>
+    {% endif %}
+{% endmacro %}

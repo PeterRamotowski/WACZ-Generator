@@ -1,0 +1,13 @@
+twig:
+    default_path: '%kernel.project_dir%/templates'
+    form_themes:
+        - 'form/wacz.html.twig'
+    globals:
+        app_version: '2.0.0'
+        tailwind_version: '4.0.0'
+        symfony_version: '7.3'
+        vite_manifest_path: '%kernel.project_dir%/public/build/.vite/manifest.json'
+
+when@test:
+    twig:
+        strict_variables: true

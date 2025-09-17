@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@layer components {
+  .form-input {
+    @apply block w-full rounded-md border-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm;
+  }
+
+  .form-textarea {
+    @apply block w-full rounded-md border-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm;
+  }
+
+  .form-checkbox {
+    @apply h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded;
+  }
+
+  .btn {
+    @apply inline-flex items-center px-4 py-2 border font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+
+  .btn-primary {
+    @apply border-transparent text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500;
+  }
+
+  .btn-secondary {
+    @apply border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:ring-indigo-500;
+  }
+
+  .btn-danger {
+    @apply border-transparent text-white bg-red-600 hover:bg-red-700 focus:ring-red-500;
+  }
+
+  .collection-container {
+    @apply space-y-2;
+  }
+}
+
+.progress-bar {
+  transition: width 0.3s ease-in-out;
+}
+
+
+.status-badge {
+  @apply inline-flex px-2 py-1 text-xs font-semibold rounded-full;
+}
+
+.status-pending {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.status-processing {
+  @apply bg-blue-100 text-blue-800;
+}
+
+.status-completed {
+  @apply bg-green-100 text-green-800;
+}
+
+.status-failed {
+  @apply bg-red-100 text-red-800;
+}
+
+
+.table-row-hover:hover {
+  @apply bg-gray-50;
+}
+
+
+.flash-message {
+  @apply mb-4 p-4 rounded-md border;
+}
+.flash-success {
+  @apply border-green-200 bg-green-50 text-green-800;
+}
+.flash-error {
+  @apply border-red-200 bg-red-50 text-red-800;
+}
+.flash-warning {
+  @apply border-yellow-200 bg-yellow-50 text-yellow-800;
+}
+.flash-info {
+  @apply border-blue-200 bg-blue-50 text-blue-800;
+}
+
+
+.form-error,
+.invalid-feedback {
+  @apply mb-2 text-sm text-red-600;
+}
+
+.form-help {
+  @apply mt-1 text-sm text-gray-500;
+}
+
+@media (max-width: 640px) {
+  .mobile-stack {
+    @apply flex-col space-y-2 space-x-0;
+  }
+  
+  .mobile-full {
+    @apply w-full;
+  }
+}
