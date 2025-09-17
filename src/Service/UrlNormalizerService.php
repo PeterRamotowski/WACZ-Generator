@@ -120,9 +120,34 @@ class UrlNormalizerService
     }
 
     /**
-     * Validate if URL is acceptable for crawling
+     * Validate if URL is acceptable for crawling (includes visited/queued checks)
      */
-    public function isValidUrl(string $url, string $baseUrl, bool $followExternalLinks, array $visitedUrls = [], array $queuedUrls = []): bool
+    public function isValidCrawlableUrl(string $url, string $baseUrl, bool $followExternalLinks, array $visitedUrls = [], array $queuedUrls = []): bool
+    {
+        // First do basic URL validation
+        if (!$this->isValidUrl($url, $baseUrl, $followExternalLinks)) {
+            return false;
+        }
+
+        // Check if already visited
+        if (in_array($this->normalizeUrl($url), $visitedUrls)) {
+            return false;
+        }
+
+        // Check if already in queue
+        foreach ($queuedUrls as $queuedUrl) {
+            if ($this->normalizeUrl($queuedUrl['url']) === $this->normalizeUrl($url)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Basic URL validation (without visited/queued checks)
+     */
+    public function isValidUrl(string $url, string $baseUrl, bool $followExternalLinks): bool
     {
         // Check for invalid protocols and patterns
         $invalidProtocols = ['javascript:', 'tel:', 'mailto:', 'ftp:', 'file:', 'data:', 'blob:', 'about:'];
@@ -153,18 +178,6 @@ class UrlNormalizerService
         $scheme = parse_url($url, PHP_URL_SCHEME);
         if (!in_array(strtolower($scheme), ['http', 'https'])) {
             return false;
-        }
-
-        // Check if already visited
-        if (in_array($this->normalizeUrl($url), $visitedUrls)) {
-            return false;
-        }
-
-        // Check if already in queue
-        foreach ($queuedUrls as $queuedUrl) {
-            if ($this->normalizeUrl($queuedUrl['url']) === $this->normalizeUrl($url)) {
-                return false;
-            }
         }
 
         // Check if external link
