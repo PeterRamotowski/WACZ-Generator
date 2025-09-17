@@ -1,11 +1,15 @@
 <?php
 
-namespace App\Service;
+namespace App\Service\Wacz;
 
 use App\DTO\WaczGenerationRequestDTO;
 use App\Entity\WaczRequest;
 use App\Repository\CrawledPageRepository;
 use App\Repository\WaczRequestRepository;
+use App\Service\WebCrawlerService;
+use App\Service\UserAgentService;
+use App\Service\UrlNormalizerService;
+use App\Service\ContentTypeService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpClient\HttpClient;

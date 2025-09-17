@@ -2,7 +2,7 @@
 
 namespace App\Command;
 
-use App\Service\WaczGeneratorService;
+use App\Service\Wacz\WaczGeneratorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;

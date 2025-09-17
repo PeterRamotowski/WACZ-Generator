@@ -5,7 +5,7 @@ namespace App\Controller;
 use App\DTO\WaczGenerationRequestDTO;
 use App\Entity\WaczRequest;
 use App\Form\WaczGenerationRequestType;
-use App\Service\WaczGeneratorService;
+use App\Service\Wacz\WaczGeneratorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
