@@ -17,10 +17,13 @@ class ContentTypeService
             'text/html',
             'text/plain',
             'text/xml',
+            'text/css',
             'application/xml',
             'application/xhtml+xml',
             'application/json',
-            'application/ld+json'
+            'application/ld+json',
+            'application/javascript',
+            'text/javascript'
         ];
 
         $lowerContentType = strtolower($contentType);
