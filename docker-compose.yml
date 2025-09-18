@@ -15,7 +15,6 @@ services:
     volumes:
       - ./symfony:/var/www
       - ./config/php.ini:/usr/local/etc/php/php.ini
-    command: php bin/console messenger:consume wacz_processing --time-limit=3600 --memory-limit=256M
     networks:
       - waczgen
 
