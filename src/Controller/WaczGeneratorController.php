@@ -5,7 +5,9 @@ namespace App\Controller;
 use App\DTO\WaczGenerationRequestDTO;
 use App\Entity\WaczRequest;
 use App\Form\WaczGenerationRequestType;
+use App\Message\ProcessWaczMessage;
 use App\Service\Wacz\WaczGeneratorService;
+use App\Service\MessengerQueueService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -14,6 +16,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -26,7 +29,9 @@ class WaczGeneratorController extends AbstractController
         private readonly ValidatorInterface $validator,
         private readonly EntityManagerInterface $entityManager,
         private readonly LoggerInterface $logger,
-        private readonly TranslatorInterface $translator
+        private readonly TranslatorInterface $translator,
+        private readonly MessageBusInterface $messageBus,
+        private readonly MessengerQueueService $queueService
     ) {}
 
     #[Route('/', name: 'index')]
@@ -34,10 +39,14 @@ class WaczGeneratorController extends AbstractController
     {
         $recentRequests = $this->waczGeneratorService->getRecentRequests(10);
         $statistics = $this->waczGeneratorService->getStatistics();
+        $queueStatistics = $this->queueService->getQueueStatistics();
+        $workersActive = $this->queueService->areWorkersActive();
 
         return $this->render('wacz/index.html.twig', [
             'recent_requests' => $recentRequests,
             'statistics' => $statistics,
+            'queue_statistics' => $queueStatistics,
+            'workers_active' => $workersActive,
         ]);
     }
 
@@ -148,13 +157,7 @@ class WaczGeneratorController extends AbstractController
         }
 
         try {
-            set_time_limit(300);
-
-            $waczRequest->setStatus(WaczRequest::STATUS_PROCESSING);
-            $waczRequest->setStartedAt(new \DateTime());
-            $this->entityManager->flush();
-
-            $this->startAsyncProcessing($waczRequest);
+            $this->dispatchWaczProcessingMessage($waczRequest);
 
             if ($request->isXmlHttpRequest()) {
                 return new JsonResponse([
@@ -170,7 +173,7 @@ class WaczGeneratorController extends AbstractController
             $waczRequest->setErrorMessage($e->getMessage());
             $this->entityManager->flush();
 
-            $this->logger->error('WACZ processing failed', [
+            $this->logger->error('Failed to dispatch WACZ processing message', [
                 'request_id' => $waczRequest->getId(),
                 'error' => $e->getMessage()
             ]);
@@ -184,22 +187,17 @@ class WaczGeneratorController extends AbstractController
         return $this->redirectToRoute('wacz_show', ['id' => $id]);
     }
 
-    private function startAsyncProcessing(WaczRequest $waczRequest): void
+    private function dispatchWaczProcessingMessage(WaczRequest $waczRequest): void
     {
-        $command = sprintf(
-            'php %s/bin/console app:process-wacz %d > /dev/null 2>&1 &',
-            $this->getParameter('kernel.project_dir'),
-            $waczRequest->getId()
-        );
-
-        exec($command);
+        $message = new ProcessWaczMessage($waczRequest->getId());
+        $this->messageBus->dispatch($message);
     }
 
     #[Route('/{id}/download', name: 'download', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function download(int $id): Response
     {
         $waczRequest = $this->waczGeneratorService->getWaczRequestById($id);
-        
+
         if (!$waczRequest) {
             throw $this->createNotFoundException($this->translator->trans('messages.wacz_request_not_found'));
         }
@@ -229,20 +227,20 @@ class WaczGeneratorController extends AbstractController
     public function delete(int $id): Response
     {
         $waczRequest = $this->waczGeneratorService->getWaczRequestById($id);
-        
+
         if (!$waczRequest) {
             throw $this->createNotFoundException($this->translator->trans('messages.wacz_request_not_found'));
         }
 
         try {
             $success = $this->waczGeneratorService->deleteWaczRequest($waczRequest);
-            
+
             if ($success) {
                 $this->addFlash('success', $this->translator->trans('messages.wacz_request_deleted_successfully'));
             } else {
                 $this->addFlash('error', $this->translator->trans('messages.failed_delete_request'));
             }
-            
+
         } catch (\Exception $e) {
             $this->addFlash('error', $this->translator->trans('messages.error_during_deletion', ['%error%' => $e->getMessage()]));
         }
@@ -256,7 +254,7 @@ class WaczGeneratorController extends AbstractController
         try {
             $deleted = $this->waczGeneratorService->deleteAllRequests();
             $this->addFlash('success', $this->translator->trans('messages.deleted_requests_count', ['%count%' => $deleted]));
-            
+
         } catch (\Exception $e) {
             $this->addFlash('error', $this->translator->trans('messages.error_during_deletion', ['%error%' => $e->getMessage()]));
         }
@@ -268,7 +266,7 @@ class WaczGeneratorController extends AbstractController
     public function progress(int $id): JsonResponse
     {
         $waczRequest = $this->waczGeneratorService->getWaczRequestById($id);
-        
+
         if (!$waczRequest) {
             return new JsonResponse(['error' => $this->translator->trans('messages.wacz_request_not_found')], 404);
         }
@@ -291,16 +289,29 @@ class WaczGeneratorController extends AbstractController
         return new JsonResponse($response);
     }
 
+    #[Route('/queue/status', name: 'queue_status', methods: ['GET'])]
+    public function queueStatus(): JsonResponse
+    {
+        $statistics = $this->queueService->getQueueStatistics();
+        $workersActive = $this->queueService->areWorkersActive();
+
+        return new JsonResponse([
+            'queue_statistics' => $statistics,
+            'workers_active' => $workersActive,
+            'timestamp' => (new \DateTime())->format('Y-m-d H:i:s')
+        ]);
+    }
+
     #[Route('/cleanup', name: 'cleanup', methods: ['POST'])]
     public function cleanup(Request $request): Response
     {
         $days = (int) $request->request->get('days', 30);
         $before = new \DateTime("-{$days} days");
-        
+
         try {
             $deleted = $this->waczGeneratorService->cleanupOldRequests($before);
             $this->addFlash('success', $this->translator->trans('messages.deleted_old_requests_count', ['%count%' => $deleted]));
-            
+
         } catch (\Exception $e) {
             $this->addFlash('error', $this->translator->trans('messages.error_during_cleanup', ['%error%' => $e->getMessage()]));
         }
@@ -325,7 +336,7 @@ class WaczGeneratorController extends AbstractController
     {
         $refererHost = parse_url($url, PHP_URL_HOST);
         $currentHost = $request->getHost();
-        
+
         return $refererHost === $currentHost;
     }
 }
