@@ -1,0 +1,51 @@
+version: '3'
+
+services:
+  waczgen:
+    container_name: waczgen
+    build:
+      context: .
+      dockerfile: ./config/Dockerfile
+    depends_on:
+      - waczgen_db
+    restart: always
+    ports:
+      - 1280:80
+    working_dir: /var/www
+    volumes:
+      - ./symfony:/var/www
+      - ./config/php.ini:/usr/local/etc/php/php.ini
+    command: php bin/console messenger:consume wacz_processing --time-limit=3600 --memory-limit=256M
+    networks:
+      - waczgen
+
+  waczgen_db:
+    container_name: waczgen_db
+    image: mariadb
+    restart: always
+    ports:
+      - 1281:3306
+    command: [
+      '--default_authentication_plugin=mysql_native_password',
+      '--character-set-server=utf8mb4',
+      '--collation-server=utf8mb4_unicode_ci',
+      '--innodb_use_native_aio=0'
+    ]
+    volumes:
+      - waczgen_db_data:/var/lib/mysql
+    environment:
+      MARIADB_DATABASE: "waczgen"
+      MARIADB_ROOT_PASSWORD: "waczgen"
+      MARIADB_USER: "waczgen"
+      MARIADB_PASSWORD: "waczgen"
+      MARIADB_AUTO_UPGRADE: 1
+      MARIADB_INITDB_SKIP_TZINFO: 1
+    networks:
+      - waczgen
+
+volumes:
+  waczgen_db_data:
+
+networks:
+  waczgen:
+    name: waczgen
