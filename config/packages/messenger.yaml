@@ -1,0 +1,27 @@
+framework:
+    messenger:
+        failure_transport: failed
+
+        transports:
+            async: '%env(MESSENGER_TRANSPORT_DSN)%'
+            wacz_processing: 
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    queue_name: wacz_processing
+                retry_strategy:
+                    max_retries: 3
+                    multiplier: 2
+                    delay: 10000
+            failed: 'doctrine://default?queue_name=failed'
+            # sync: 'sync://'
+
+        routing:
+            'App\Message\ProcessWaczMessage': wacz_processing
+
+# when@test:
+#    framework:
+#        messenger:
+#            transports:
+#                # replace with your transport name here (e.g., my_transport: 'in-memory://')
+#                # For more Messenger testing tools, see https://github.com/zenstruck/messenger-test
+#                async: 'in-memory://'
