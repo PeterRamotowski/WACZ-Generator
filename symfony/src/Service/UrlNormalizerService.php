@@ -109,7 +109,7 @@ class UrlNormalizerService
         }
 
         // Relative URL
-        $basePath = dirname(parse_url($baseUrl, PHP_URL_PATH));
+        $basePath = dirname(parse_url($baseUrl, PHP_URL_PATH) ?: '/');
         $parsed = parse_url($baseUrl);
         if (!$parsed || !isset($parsed['scheme']) || !isset($parsed['host'])) {
             return $url; // Return as-is if can't parse
