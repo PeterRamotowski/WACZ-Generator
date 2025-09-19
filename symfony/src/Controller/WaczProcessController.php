@@ -37,7 +37,28 @@ class WaczProcessController extends AbstractController
             throw $this->createNotFoundException($this->translator->trans('messages.wacz_request_not_found'));
         }
 
-        if ($waczRequest->getStatus() !== 'pending') {
+        // Check if the request is in a processable state
+        $currentStatus = $waczRequest->getStatus();
+        $canProcess = false;
+
+        if ($currentStatus === WaczRequest::STATUS_PENDING) {
+            $canProcess = true;
+        } elseif ($currentStatus === WaczRequest::STATUS_PROCESSING) {
+            // Check if this is a stuck request (similar logic to message handler)
+            $stuckThreshold = new \DateTime('-30 minutes');
+            $startedAt = $waczRequest->getStartedAt();
+
+            if (!$startedAt || $startedAt < $stuckThreshold) {
+                $this->logger->info('Allowing retry of stuck WACZ request from web interface', [
+                    'wacz_request_id' => $id,
+                    'started_at' => $startedAt?->format('Y-m-d H:i:s'),
+                    'stuck_threshold' => $stuckThreshold->format('Y-m-d H:i:s')
+                ]);
+                $canProcess = true;
+            }
+        }
+
+        if (!$canProcess) {
             $message = $this->translator->trans('messages.request_already_processed');
             if ($request->isXmlHttpRequest()) {
                 return new JsonResponse(['success' => false, 'message' => $message], 400);
