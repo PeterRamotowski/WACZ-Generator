@@ -1,10 +1,13 @@
 <?php
 
-namespace App\Service;
+namespace App\Service\Crawler;
 
 use App\Entity\CrawledPage;
 use App\Entity\WaczRequest;
 use App\Repository\CrawledPageRepository;
+use App\Service\ContentTypeService;
+use App\Service\LinkExtraction\LinkExtractorService;
+use App\Service\UrlNormalizerService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpClient\HttpClient;
@@ -509,7 +512,7 @@ class CrawlOrchestratorService
         $headers = $crawledPage->getHeaders();
         $isGzipped = isset($headers['content-encoding']) && in_array('gzip', $headers['content-encoding']);
         
-        if ($isGzipped && $this->isGzipContent($content)) {
+        if ($isGzipped && $this->contentTypeService->isGzipContent($content)) {
             $decompressedContent = gzinflate(substr($content, 10, -8));
             if ($decompressedContent !== false) {
                 return $decompressedContent;
@@ -517,14 +520,6 @@ class CrawlOrchestratorService
         }
 
         return $content;
-    }
-
-    /**
-     * Check if content is gzipped
-     */
-    private function isGzipContent(string $content): bool
-    {
-        return strlen($content) >= 2 && substr($content, 0, 2) === "\x1f\x8b";
     }
 
     /**

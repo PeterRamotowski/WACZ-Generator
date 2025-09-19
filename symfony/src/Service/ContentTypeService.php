@@ -89,4 +89,12 @@ class ContentTypeService
 
         return $text;
     }
+
+    /**
+     * Check if content is gzipped
+     */
+    public function isGzipContent(string $content): bool
+    {
+        return strlen($content) >= 2 && substr($content, 0, 2) === "\x1f\x8b";
+    }
 }

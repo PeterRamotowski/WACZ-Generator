@@ -1,9 +1,11 @@
 <?php
 
-namespace App\Service;
+namespace App\Service\LinkExtraction;
 
 use App\Entity\CrawledPage;
+use App\Service\ContentTypeService;
 use App\Service\LinkExtraction\LinkExtractionStrategyInterface;
+use App\Service\UrlNormalizerService;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -111,7 +113,7 @@ class LinkExtractorService
     {
         try {
             // Check if content is gzipped and decompress if needed
-            if ($this->isGzipContent($content)) {
+            if ($this->contentTypeService->isGzipContent($content)) {
                 $decompressedContent = gzinflate(substr($content, 10, -8));
                 if ($decompressedContent !== false) {
                     $content = $decompressedContent;
@@ -218,14 +220,6 @@ class LinkExtractorService
         }
 
         return $deduplicated;
-    }
-
-    /**
-     * Check if content is gzipped
-     */
-    private function isGzipContent(string $content): bool
-    {
-        return strlen($content) >= 2 && substr($content, 0, 2) === "\x1f\x8b";
     }
 
     /**

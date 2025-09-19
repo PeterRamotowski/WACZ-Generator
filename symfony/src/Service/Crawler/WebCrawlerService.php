@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Service;
+namespace App\Service\Crawler;
 
 use App\Entity\WaczRequest;
+use App\Service\LinkExtraction\CssExtractionStrategy;
 use App\Service\LinkExtraction\HtmlLinkExtractionStrategy;
 use App\Service\LinkExtraction\ImageExtractionStrategy;
-use App\Service\LinkExtraction\CssExtractionStrategy;
 use App\Service\LinkExtraction\JavaScriptExtractionStrategy;
+use App\Service\LinkExtraction\LinkExtractorService;
 use Psr\Log\LoggerInterface;
 
 class WebCrawlerService

@@ -13,6 +13,7 @@ class WarcWriterService
 
     public function __construct(
         private readonly LoggerInterface $logger,
+        private readonly UrlNormalizerService $urlNormalizer,
         private readonly string $waczSoftwareName
     ) {
     }
