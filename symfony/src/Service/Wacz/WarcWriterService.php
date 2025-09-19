@@ -9,13 +9,11 @@ use Symfony\Component\Uid\Uuid;
 
 class WarcWriterService
 {
-    private const SOFTWARE_NAME = 'WACZ-Generator/1.0';
-
     private array $warcRecordPositions = [];
 
     public function __construct(
         private readonly LoggerInterface $logger,
-        private readonly UrlNormalizerService $urlNormalizer
+        private readonly string $waczSoftwareName
     ) {
     }
 
@@ -65,7 +63,7 @@ class WarcWriterService
         $timestamp = gmdate('Y-m-d\TH:i:s\Z');
         $recordId = '<urn:uuid:' . $this->generateUuid() . '>';
 
-        $payload = "software: " . self::SOFTWARE_NAME . "\n";
+        $payload = "software: " . $this->waczSoftwareName . "\n";
         $payload .= "created: {$timestamp}\n";
         $payload .= "operator: WACZ Generator\n";
         $payload .= "format: WARC File Format 1.1\n";

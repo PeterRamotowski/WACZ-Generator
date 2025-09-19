@@ -17,8 +17,6 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 class WaczGeneratorService
 {
-    private const WACZ_VERSION = '1.1.1';
-
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly WaczRequestRepository $waczRequestRepository,
@@ -31,7 +29,9 @@ class WaczGeneratorService
         private readonly LoggerInterface $logger,
         private readonly TranslatorInterface $translator,
         private readonly string $waczOutputDir,
-        private readonly int $waczMaxFileSize
+        private readonly int $waczMaxFileSize,
+        private readonly string $waczVersion,
+        private readonly string $waczSoftwareName
     ) {
     }
 
@@ -48,8 +48,8 @@ class WaczGeneratorService
         $waczRequest->setCrawlDelay($dto->getCrawlDelay());
         $waczRequest->setMetadata([
             'options' => $dto->toArray(),
-            'created_by' => 'WACZ Generator',
-            'version' => self::WACZ_VERSION,
+            'created_by' => $this->waczSoftwareName,
+            'version' => $this->waczVersion,
             'user_agent' => $randomUserAgent
         ]);
 

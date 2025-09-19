@@ -7,10 +7,10 @@ use Psr\Log\LoggerInterface;
 
 class DatapackageService
 {
-    private const SOFTWARE_NAME = 'WACZ-Generator/1.0';
-
     public function __construct(
-        private readonly LoggerInterface $logger
+        private readonly LoggerInterface $logger,
+        private readonly string $waczSoftwareName,
+        private readonly string $waczVersion
     ) {
     }
 
@@ -50,8 +50,8 @@ class DatapackageService
                     'bytes' => $cdxSize
                 ]
             ],
-            'wacz_version' => '1.1.1',
-            'software' => self::SOFTWARE_NAME,
+            'wacz_version' => $this->waczVersion,
+            'software' => $this->waczSoftwareName,
             'created' => $waczRequest->getCreatedAt()->format('Y-m-d\TH:i:s.000\Z'),
             'title' => $waczRequest->getTitle(),
             'modified' => (new \DateTime())->format('Y-m-d\TH:i:s.000\Z')
@@ -80,7 +80,7 @@ class DatapackageService
                 'signature' => $signature,
                 'publicKey' => $keyPair['public'],
                 'created' => (new \DateTime())->format('Y-m-d\TH:i:s.v\Z'),
-                'software' => self::SOFTWARE_NAME
+                'software' => $this->waczSoftwareName
             ]
         ];
 
