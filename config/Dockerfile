@@ -65,6 +65,10 @@ RUN update-rc.d apache2 disable
 COPY ./config/supervisord.conf /etc/supervisord.conf
 COPY ./config/supervisor/ /etc/supervisor/conf.d/
 
+# Copy worker startup script
+COPY ./config/start-worker.sh /var/start-worker.sh
+RUN chmod +x /var/start-worker.sh
+
 # Create Apache Supervisor config
 RUN echo "[program:apache2]\n\
 command=/usr/sbin/apache2ctl -D FOREGROUND\n\
