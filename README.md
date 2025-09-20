@@ -12,7 +12,13 @@ This Symfony app lets you submit a URL, and it crawls the site to generate a WAC
 - Asynchronous processing via message queue
 - Download completed archives
 
-## Wacz Readers support
+## Screenshots
+
+<img width="30%" height="auto" alt="Project details" src="https://github.com/user-attachments/assets/eb0f4828-244f-4805-88fc-99fff8c6ebba" />
+<img width="30%" height="auto" alt="dashboard" src="https://github.com/user-attachments/assets/2caa188d-e43b-4ee5-b0e5-b928311696c6" />
+<img width="30%" height="auto" alt="Archive list" src="https://github.com/user-attachments/assets/465eb2b4-ada7-4080-a962-07292c6efc5b" />
+
+## WACZ readers support
 
 The generated WACZ files can be viewed using various web archive readers. Here's the current compatibility status:
 
